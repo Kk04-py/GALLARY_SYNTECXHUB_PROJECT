@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClickStack</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #121212;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Header & Controls */
+        .header {
+            padding: 30px 20px;
+            text-align: center;
+            background: linear-gradient(135deg, #1a1a2e, #540836);
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-family: 'Poppins', 'Arial', sans-serif;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientMove 4s ease infinite;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 10px 35px;
+            border: none;
+            background: linear-gradient(135deg, #39032e3c, #764ba2);
+            color: white;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        /* Search Bar */
+        .search-box {
+            margin-top: 15px;
+        }
+
+        .search-box input {
+            padding: 10px 20px;
+            border-radius: 25px;
+            border: 1px solid #444;
+            background: #1a1a2e;
+            color: #fff;
+            width: 250px;
+            outline: none;
+        }
+
+        /* Masonry Grid */
+        .gallery {
+            column-count: 4;
+            column-gap: 15px;
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (max-width: 1200px) { .gallery { column-count: 3; } }
+        @media (max-width: 800px) { .gallery { column-count: 2; } }
+        @media (max-width: 500px) { .gallery { column-count: 1; } }
+
+        .item {
+            break-inside: avoid;
+            margin-bottom: 15px;
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            background: #2a2a2a;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        .item:hover {
+            transform: scale(1.02);
+            z-index: 2;
+        }
+
+        .item img {
+            width: 100%;
+            display: block;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Overlay Info */
+        .overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .item:hover .overlay { 
+            opacity: 1; 
+        }
+
+        .overlay h3 { 
+            font-size: 16px; 
+            margin-bottom: 5px; 
+        }
+
+        .overlay span { 
+            font-size: 12px; 
+            color: #e94560; 
+        }
+
+        /* Lightbox Modal */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .lightbox.active { 
+            display: flex; 
+        }
+
+        .lightbox img {
+            max-width: 90%;
+            max-height: 80vh;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.5);
+        }
+
+        .lightbox-info {
+            position: absolute;
+            bottom: 50px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .lightbox-info h2 { 
+            font-weight: 300; 
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 30px;
+            right: 40px;
+            font-size: 40px;
+            color: #fff;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close-btn:hover { 
+            color: #e94560; 
+        }
+
+        .nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 50px;
+            color: #fff;
+            cursor: pointer;
+            padding: 20px;
+            transition: color 0.3s;
+        }
+
+        .nav-btn:hover { 
+            color: #e94560; 
+        }
+
+        .prev { 
+            left: 30px; 
+        }
+
+        .next { 
+            right: 30px; 
+        }
+
+        @keyframes fadeIn {
+            to { 
+                opacity: 1; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>CLICKSTACK</h1>
+        
+        <div class="controls">
+           <button class="btn active" onclick="filter('all', this)">All</button>
+<button class="btn" onclick="filter('nature', this)">Nature</button>
+<button class="btn" onclick="filter('city', this)">City</button>
+<button class="btn" onclick="filter('people', this)">Aesthetics</button>
+        </div>
+        
+       
+    </div>
+
+    <div class="gallery" id="gallery">
+        <!-- Images will be inserted here by JavaScript -->
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox">
+        
+        <!-- Close Button -->
+        <span class="close-btn" onclick="closeLightbox()">&times;</span>
+        
+        <!-- Previous Button -->
+        <span class="nav-btn prev" onclick="changeImage(-1)">&#10094;</span>
+        
+        <!-- Main Image -->
+        <img src="" id="lightbox-img">
+        
+        <!-- Next Button -->
+        <span class="nav-btn next" onclick="changeImage(1)">&#10095;</span>
+        
+        <!-- Title Info -->
+        <div class="lightbox-info">
+            <h2 id="lightbox-title"></h2>
+        </div>
+    </div>
+
+    <script>
+        // Image Data
+        const images = [
+    // Nature (25 images)
+    { src: 'https://picsum.photos/id/1015/800/1200', category: 'nature', title: 'Mountain River', location: 'Oregon' },
+    { src: 'https://picsum.photos/id/1016/800/600', category: 'nature', title: 'Valley View', location: 'Arizona' },
+    { src: 'https://picsum.photos/id/1018/800/800', category: 'nature', title: 'Forest Path', location: 'Iceland' },
+    { src: 'https://picsum.photos/id/1020/800/600', category: 'nature', title: 'Bear Watch', location: 'Alaska' },
+    { src: 'https://picsum.photos/id/1021/800/900', category: 'nature', title: 'Morning Fog', location: 'Scotland' },
+    { src: 'https://picsum.photos/id/1022/800/600', category: 'nature', title: 'Night Sky', location: 'Desert' },
+    { src: 'https://picsum.photos/id/1024/800/1100', category: 'nature', title: 'Coastal Rocks', location: 'New Zealand' },
+    { src: 'https://picsum.photos/id/1027/800/600', category: 'nature', title: 'Wild Horse', location: 'Montana' },
+    { src: 'https://picsum.photos/id/1029/800/600', category: 'nature', title: 'Mountain Peak', location: 'Alps' },
+    { src: 'https://picsum.photos/id/1035/800/800', category: 'nature', title: 'Waterfall', location: 'Hawaii' },
+    { src: 'https://picsum.photos/id/1037/800/600', category: 'nature', title: 'Sunset Beach', location: 'California' },
+    { src: 'https://picsum.photos/id/1039/800/700', category: 'nature', title: 'Autumn Leaves', location: 'Vermont' },
+    { src: 'https://picsum.photos/id/1041/800/900', category: 'nature', title: 'Snowy Forest', location: 'Canada' },
+    { src: 'https://picsum.photos/id/1043/800/600', category: 'nature', title: 'Desert Dunes', location: 'Sahara' },
+    { src: 'https://picsum.photos/id/1044/800/700', category: 'nature', title: 'Lake Reflection', location: 'Switzerland' },
+    { src: 'https://picsum.photos/id/1047/800/800', category: 'nature', title: 'Canyon Walls', location: 'Utah' },
+    { src: 'https://picsum.photos/id/1050/800/600', category: 'nature', title: 'Green Valley', location: 'Ireland' },
+    { src: 'https://picsum.photos/id/1051/800/700', category: 'nature', title: 'Rocky Coast', location: 'Maine' },
+    { src: 'https://picsum.photos/id/1052/800/600', category: 'nature', title: 'Spring Bloom', location: 'Netherlands' },
+    { src: 'https://picsum.photos/id/1053/800/900', category: 'nature', title: 'Rolling Hills', location: 'Tuscany' },
+    { src: 'https://picsum.photos/id/1054/800/600', category: 'nature', title: 'Tropical Beach', location: 'Bali' },
+    { src: 'https://picsum.photos/id/1055/800/700', category: 'nature', title: 'Palm Trees', location: 'Florida' },
+    { src: 'https://picsum.photos/id/1056/800/800', category: 'nature', title: 'Mountain Lake', location: 'Norway' },
+    { src: 'https://picsum.photos/id/1057/800/600', category: 'nature', title: 'Redwood Trees', location: 'California' },
+    { src: 'https://picsum.photos/id/1058/800/900', category: 'nature', title: 'Prairie Fields', location: 'Kansas' },
+
+    // City (25 images)
+    { src: 'https://picsum.photos/id/1019/800/1000', category: 'city', title: 'Urban Structure', location: 'NYC' },
+    { src: 'https://picsum.photos/id/1035/800/600', category: 'city', title: 'City Lights', location: 'Tokyo' },
+    { src: 'https://picsum.photos/id/1039/800/600', category: 'city', title: 'Busy Street', location: 'London' },
+    { src: 'https://picsum.photos/id/1074/800/600', category: 'city', title: 'Skyscraper', location: 'Chicago' },
+    { src: 'https://picsum.photos/id/1076/800/700', category: 'city', title: 'Downtown View', location: 'Miami' },
+    { src: 'https://picsum.photos/id/1077/800/800', category: 'city', title: 'City Bridge', location: 'Sydney' },
+    { src: 'https://picsum.photos/id/1078/800/600', category: 'city', title: 'Night Downtown', location: 'Hong Kong' },
+    { src: 'https://picsum.photos/id/1079/800/700', category: 'city', title: 'Urban Skyline', location: 'Singapore' },
+    { src: 'https://picsum.photos/id/1080/800/600', category: 'city', title: 'City Park', location: 'Berlin' },
+    { src: 'https://picsum.photos/id/1081/800/800', category: 'city', title: 'Metro Station', location: 'Paris' },
+    { src: 'https://picsum.photos/id/1082/800/700', category: 'city', title: 'Harbor View', location: 'Boston' },
+    { src: 'https://picsum.photos/id/1083/800/600', category: 'city', title: 'City Streets', location: 'San Francisco' },
+    { src: 'https://picsum.photos/id/1084/800/900', category: 'city', title: 'Buildings', location: 'Toronto' },
+  
+    // People (20 images)
+    { src: 'https://picsum.photos/id/1036/800/800', category: 'people', title: 'Smile', location: 'Studio' },
+    { src: 'https://picsum.photos/id/1037/800/1000', category: 'people', title: 'Portrait', location: 'Paris' },
+    { src: 'https://picsum.photos/id/1043/800/600', category: 'people', title: 'Expression', location: 'Studio' },
+    { src: 'https://picsum.photos/id/1050/800/700', category: 'people', title: 'Crowd', location: 'Festival' },
+    { src: 'https://picsum.photos/id/1055/800/800', category: 'people', title: 'Friends', location: 'Beach' },
+    { src: 'https://picsum.photos/id/1060/800/600', category: 'people', title: 'Dancer', location: 'Stage' },
+    { src: 'https://picsum.photos/id/1062/800/700', category: 'people', title: 'Worker', location: 'Construction' },
+    { src: 'https://picsum.photos/id/1063/800/900', category: 'people', title: 'Artist', location: 'Studio' },
+    { src: 'https://picsum.photos/id/1064/800/600', category: 'people', title: 'Student', location: 'Campus' },
+    { src: 'https://picsum.photos/id/1065/800/700', category: 'people', title: 'Musician', location: 'Concert' },
+    { src: 'https://picsum.photos/id/1066/800/800', category: 'people', title: 'Athlete', location: 'Gym' },
+    { src: 'https://picsum.photos/id/1067/800/600', category: 'people', title: 'Chef', location: 'Kitchen' },
+    { src: 'https://picsum.photos/id/1068/800/700', category: 'people', title: 'Doctor', location: 'Hospital' },
+    { src: 'https://picsum.photos/id/1069/800/900', category: 'people', title: 'Fashion', location: 'Runway' },
+    { src: 'https://picsum.photos/id/1070/800/600', category: 'people', title: 'Toddler', location: 'Home' },
+    { src: 'https://picsum.photos/id/1071/800/700', category: 'people', title: 'Elderly', location: 'Park' },
+    { src: 'https://picsum.photos/id/1072/800/800', category: 'people', title: 'Family', location: 'Home' },
+    { src: 'https://picsum.photos/id/1073/800/600', category: 'people', title: 'Business', location: 'Office' },
+    { src: 'https://picsum.photos/id/1005/800/700', category: 'people', title: 'Model', location: 'Studio' },
+    { src: 'https://picsum.photos/id/1010/800/900', category: 'people', title: 'Group', location: 'Party' },
+
+    // Architecture (15 images)
+    { src: 'https://picsum.photos/id/1041/800/600', category: 'architecture', title: 'Building', location: 'Dubai' },
+    { src: 'https://picsum.photos/id/1044/800/700', category: 'architecture', title: 'Modern Art', location: 'Paris' },
+   // Architecture (15 working images)
+{ src: 'https://picsum.photos/id/122/800/600', category: 'architecture', title: 'Glass Tower', location: 'NYC' },
+{ src: 'https://picsum.photos/id/148/800/700', category: 'architecture', title: 'Cathedral', location: 'Rome' },
+{ src: 'https://picsum.photos/id/164/800/800', category: 'architecture', title: 'Castle', location: 'Scotland' },
+{ src: 'https://picsum.photos/id/178/800/600', category: 'architecture', title: 'Temple', location: 'Japan' },
+{ src: 'https://picsum.photos/id/201/800/900', category: 'architecture', title: 'Bridge', location: 'San Francisco' },
+{ src: 'https://picsum.photos/id/203/800/600', category: 'architecture', title: 'Stadium', location: 'London' },
+{ src: 'https://picsum.photos/id/237/800/700', category: 'architecture', title: 'Museum', location: 'Washington' },
+{ src: 'https://picsum.photos/id/242/800/800', category: 'architecture', title: 'Library', location: 'Boston' },
+{ src: 'https://picsum.photos/id/250/800/600', category: 'architecture', title: 'Station', location: 'Tokyo' },
+{ src: 'https://picsum.photos/id/253/800/700', category: 'architecture', title: 'Palace', location: 'Vienna' },
+{ src: 'https://picsum.photos/id/254/800/900', category: 'architecture', title: 'Skyscraper', location: 'Chicago' },
+{ src: 'https://picsum.photos/id/259/800/600', category: 'architecture', title: 'Modern Building', location: 'Dubai' },
+{ src: 'https://picsum.photos/id/294/800/700', category: 'architecture', title: 'Tower', location: 'Paris' },
+{ src: 'https://picsum.photos/id/349/800/800', category: 'architecture', title: 'Office Building', location: 'NYC' },
+{ src: 'https://picsum.photos/id/380/800/600', category: 'architecture', title: 'Structure', location: 'Berlin' },
+    // Animals (15 images)
+    { src: 'https://picsum.photos/id/1001/800/600', category: 'animals', title: 'Dog', location: 'Home' },
+    { src: 'https://picsum.photos/id/1003/800/700', category: 'animals', title: 'Cat', location: 'Home' },
+    { src: 'https://picsum.photos/id/1010/800/800', category: 'animals', title: 'Lion', location: 'Safari' },
+    { src: 'https://picsum.photos/id/1011/800/600', category: 'animals', title: 'Elephant', location: 'Africa' },
+    { src: 'https://picsum.photos/id/1012/800/900', category: 'animals', title: 'Tiger', location: 'India' },
+    { src: 'https://picsum.photos/id/1013/800/600', category: 'animals', title: 'Zebra', location: 'Kenya' },
+    { src: 'https://picsum.photos/id/1014/800/700', category: 'animals', title: 'Giraffe', location: 'Zoo' },
+    { src: 'https://picsum.photos/id/1016/800/800', category: 'animals', title: 'Monkey', location: 'Jungle' },
+    { src: 'https://picsum.photos/id/1017/800/600', category: 'animals', title: 'Penguin', location: 'Antarctica' },
+    { src: 'https://picsum.photos/id/1018/800/700', category: 'animals', title: 'Eagle', location: 'Mountains' },
+    { src: 'https://picsum.photos/id/1019/800/900', category: 'animals', title: 'Owl', location: 'Forest' },
+    { src: 'https://picsum.photos/id/1020/800/600', category: 'animals', title: 'Rabbit', location: 'Garden' },
+    { src: 'https://picsum.photos/id/1021/800/700', category: 'animals', title: 'Squirrel', location: 'Park' },
+    { src: 'https://picsum.photos/id/1022/800/800', category: 'animals', title: 'Deer', location: 'Woods' },
+    { src: 'https://picsum.photos/id/1023/800/600', category: 'animals', title: 'Fox', location: 'Nature' },
+
+    { src: 'https://picsum.photos/id/10/800/600', category: 'nature', title: 'Mountain River', location: 'Oregon' },
+    { src: 'https://picsum.photos/id/15/800/600', category: 'nature', title: 'Valley View', location: 'Arizona' },
+    { src: 'https://picsum.photos/id/16/800/800', category: 'nature', title: 'Forest Path', location: 'Iceland' },
+    { src: 'https://picsum.photos/id/18/800/600', category: 'nature', title: 'Bear Watch', location: 'Alaska' },
+    { src: 'https://picsum.photos/id/20/800/900', category: 'nature', title: 'Morning Fog', location: 'Scotland' },
+    { src: 'https://picsum.photos/id/21/800/600', category: 'nature', title: 'Night Sky', location: 'Desert' },
+    { src: 'https://picsum.photos/id/22/800/1100', category: 'nature', title: 'Coastal Rocks', location: 'New Zealand' },
+    { src: 'https://picsum.photos/id/27/800/600', category: 'nature', title: 'Wild Horse', location: 'Montana' },
+    { src: 'https://picsum.photos/id/28/800/600', category: 'nature', title: 'Mountain Peak', location: 'Alps' },
+    { src: 'https://picsum.photos/id/29/800/800', category: 'nature', title: 'Waterfall', location: 'Hawaii' },
+    { src: 'https://picsum.photos/id/30/800/600', category: 'nature', title: 'Sunset Beach', location: 'California' },
+    { src: 'https://picsum.photos/id/31/800/700', category: 'nature', title: 'Autumn Leaves', location: 'Vermont' },
+    { src: 'https://picsum.photos/id/35/800/900', category: 'nature', title: 'Snowy Forest', location: 'Canada' },
+    { src: 'https://picsum.photos/id/36/800/600', category: 'nature', title: 'Desert Dunes', location: 'Sahara' },
+    { src: 'https://picsum.photos/id/37/800/700', category: 'nature', title: 'Lake Reflection', location: 'Switzerland' },
+    { src: 'https://picsum.photos/id/38/800/800', category: 'nature', title: 'Canyon Walls', location: 'Utah' },
+    { src: 'https://picsum.photos/id/39/800/600', category: 'nature', title: 'Green Valley', location: 'Ireland' },
+    { src: 'https://picsum.photos/id/40/800/700', category: 'nature', title: 'Rocky Coast', location: 'Maine' },
+    { src: 'https://picsum.photos/id/41/800/800', category: 'nature', title: 'Spring Bloom', location: 'Netherlands' },
+    { src: 'https://picsum.photos/id/42/800/900', category: 'nature', title: 'Rolling Hills', location: 'Tuscany' },
+    { src: 'https://picsum.photos/id/43/800/600', category: 'nature', title: 'Tropical Beach', location: 'Bali' },
+    { src: 'https://picsum.photos/id/44/800/700', category: 'nature', title: 'Palm Trees', location: 'Florida' },
+    { src: 'https://picsum.photos/id/45/800/800', category: 'nature', title: 'Mountain Lake', location: 'Norway' },
+    { src: 'https://picsum.photos/id/46/800/600', category: 'nature', title: 'Redwood Trees', location: 'California' },
+    { src: 'https://picsum.photos/id/47/800/900', category: 'nature', title: 'Prairie Fields', location: 'Kansas' },
+
+    // City (25 images)
+    { src: 'https://picsum.photos/id/19/800/1000', category: 'city', title: 'Urban Structure', location: 'NYC' },
+    { src: 'https://picsum.photos/id/35/800/600', category: 'city', title: 'City Lights', location: 'Tokyo' },
+    { src: 'https://picsum.photos/id/39/800/600', category: 'city', title: 'Busy Street', location: 'London' },
+    { src: 'https://picsum.photos/id/74/800/600', category: 'city', title: 'Skyscraper', location: 'Chicago' },
+    { src: 'https://picsum.photos/id/75/800/700', category: 'city', title: 'Downtown View', location: 'Miami' },
+    { src: 'https://picsum.photos/id/76/800/800', category: 'city', title: 'City Bridge', location: 'Sydney' },
+    { src: 'https://picsum.photos/id/77/800/600', category: 'city', title: 'Night Downtown', location: 'Hong Kong' },
+    { src: 'https://picsum.photos/id/78/800/700', category: 'city', title: 'Urban Skyline', location: 'Singapore' },
+    { src: 'https://picsum.photos/id/79/800/600', category: 'city', title: 'City Park', location: 'Berlin' },
+    { src: 'https://picsum.photos/id/80/800/800', category: 'city', title: 'Metro Station', location: 'Paris' },
+    { src: 'https://picsum.photos/id/81/800/700', category: 'city', title: 'Harbor View', location: 'Boston' },
+    { src: 'https://picsum.photos/id/82/800/600', category: 'city', title: 'City Streets', location: 'San Francisco' },
+    { src: 'https://picsum.photos/id/83/800/900', category: 'city', title: 'Buildings', location: 'Toronto' },
+    { src: 'https://picsum.photos/id/84/800/600', category: 'city', title: 'Traffic', location: 'Bangkok' },
+    { src: 'https://picsum.photos/id/85/800/700', category: 'city', title: 'Neon Signs', location: 'Seoul' },
+    { src: 'https://picsum.photos/id/86/800/800', category: 'city', title: 'Subway', location: 'Moscow' },
+    { src: 'https://picsum.photos/id/87/800/600', category: 'city', title: 'Office Towers', location: 'Dubai' },
+    { src: 'https://picsum.photos/id/88/800/700', category: 'city', title: 'City Square', location: 'Rome' },
+    { src: 'https://picsum.photos/id/89/800/800', category: 'city', title: 'Historic Quarter', location: 'Prague' },
+    { src: 'https://picsum.photos/id/90/800/600', category: 'city', title: 'Waterfront', location: 'Barcelona' },
+    { src: 'https://picsum.photos/id/91/800/900', category: 'city', title: 'Modern Architecture', location: 'Shanghai' },
+    { src: 'https://picsum.photos/id/92/800/600', category: 'city', title: 'Clock Tower', location: 'Melbourne' },
+    { src: 'https://picsum.photos/id/93/800/700', category: 'city', title: 'Rooftop View', location: 'Los Angeles' },
+    { src: 'https://picsum.photos/id/94/800/800', category: 'city', title: 'Alleyway', location: 'Vancouver' },
+    { src: 'https://picsum.photos/id/95/800/600', category: 'city', title: 'Ferry Wheel', location: 'Seattle' },
+
+    // People (25 images)
+    { src: 'https://picsum.photos/id/64/800/800', category: 'people', title: 'Smile', location: 'Studio' },
+    { src: 'https://picsum.photos/id/65/800/1000', category: 'people', title: 'Portrait', location: 'Paris' },
+    { src: 'https://picsum.photos/id/66/800/600', category: 'people', title: 'Expression', location: 'Studio' },
+    { src: 'https://picsum.photos/id/67/800/700', category: 'people', title: 'Crowd', location: 'Festival' },
+    { src: 'https://picsum.photos/id/68/800/800', category: 'people', title: 'Friends', location: 'Beach' },
+    { src: 'https://picsum.photos/id/69/800/600', category: 'people', title: 'Dancer', location: 'Stage' },
+    { src: 'https://picsum.photos/id/70/800/700', category: 'people', title: 'Worker', location: 'Construction' },
+    { src: 'https://picsum.photos/id/71/800/900', category: 'people', title: 'Artist', location: 'Studio' },
+    { src: 'https://picsum.photos/id/72/800/600', category: 'people', title: 'Student', location: 'Campus' },
+    { src: 'https://picsum.photos/id/73/800/700', category: 'people', title: 'Musician', location: 'Concert' },
+    { src: 'https://picsum.photos/id/91/800/800', category: 'people', title: 'Athlete', location: 'Gym' },
+    { src: 'https://picsum.photos/id/92/800/600', category: 'people', title: 'Chef', location: 'Kitchen' },
+    { src: 'https://picsum.photos/id/93/800/700', category: 'people', title: 'Doctor', location: 'Hospital' },
+    { src: 'https://picsum.photos/id/94/800/900', category: 'people', title: 'Fashion', location: 'Runway' },
+    { src: 'https://picsum.photos/id/95/800/600', category: 'people', title: 'Toddler', location: 'Home' },
+    { src: 'https://picsum.photos/id/96/800/700', category: 'people', title: 'Elderly', location: 'Park' },
+    { src: 'https://picsum.photos/id/97/800/800', category: 'people', title: 'Family', location: 'Home' },
+    { src: 'https://picsum.photos/id/98/800/600', category: 'people', title: 'Business', location: 'Office' },
+    { src: 'https://picsum.photos/id/99/800/700', category: 'people', title: 'Model', location: 'Studio' },
+    { src: 'https://picsum.photos/id/100/800/900', category: 'people', title: 'Group', location: 'Party' },
+    { src: 'https://picsum.photos/id/133/800/600', category: 'people', title: 'Teenager', location: 'School' },
+    { src: 'https://picsum.photos/id/134/800/700', category: 'people', title: 'Woman', location: 'Portrait' },
+    { src: 'https://picsum.photos/id/135/800/800', category: 'people', title: 'Man', location: 'Studio' },
+    { src: 'https://picsum.photos/id/136/800/600', category: 'people', title: 'Bride', location: 'Wedding' },
+    { src: 'https://picsum.photos/id/137/800/700', category: 'people', title: 'Groom', location: 'Wedding' },
+    { src: 'https://picsum.photos/id/138/800/800', category: 'people', title: 'Baby', location: 'Crib' },
+    { src: 'https://picsum.photos/id/139/800/600', category: 'people', title: 'Senior', location: 'Portrait' },
+    { src: 'https://picsum.photos/id/140/800/700', category: 'people', title: 'Couple', location: 'Date' },
+    { src: 'https://picsum.photos/id/141/800/900', category: 'people', title: 'Team', location: 'Office' },
+    { src: 'https://picsum.photos/id/142/800/600', category: 'people', title: 'Hiker', location: 'Mountain' },
+    { src: 'https://picsum.photos/id/143/800/700', category: 'people', title: 'Surfer', location: 'Beach' },
+    { src: 'https://picsum.photos/id/144/800/800', category: 'people', title: 'Runner', location: 'Track' },
+    { src: 'https://picsum.photos/id/145/800/600', category: 'people', title: 'Cyclist', location: 'Road' },
+    { src: 'https://picsum.photos/id/146/800/700', category: 'people', title: 'Swimmer', location: 'Pool' },
+    { src: 'https://picsum.photos/id/147/800/800', category: 'people', title: 'Yoga', location: 'Studio' },
+    { src: 'https://picsum.photos/id/150/800/600', category: 'people', title: 'Teacher', location: 'Classroom' },
+    { src: 'https://picsum.photos/id/151/800/700', category: 'people', title: 'Nurse', location: 'Hospital' },
+    { src: 'https://picsum.photos/id/152/800/800', category: 'people', title: 'Farmer', location: 'Field' },
+    { src: 'https://picsum.photos/id/153/800/600', category: 'people', title: 'Firefighter', location: 'Station' },
+    { src: 'https://picsum.photos/id/154/800/700', category: 'people', title: 'Police', location: 'Street' },
+    { src: 'https://picsum.photos/id/155/800/800', category: 'people', title: 'Pilot', location: 'Plane' },
+    { src: 'https://picsum.photos/id/156/800/600', category: 'people', title: 'Gardener', location: 'Garden' },
+    { src: 'https://picsum.photos/id/157/800/700', category: 'people', title: 'Barista', location: 'Cafe' },
+    { src: 'https://picsum.photos/id/158/800/800', category: 'people', title: 'Waiter', location: 'Restaurant' },
+    { src: 'https://picsum.photos/id/159/800/600', category: 'people', title: 'Photographer', location: 'Outdoor' },
+    { src: 'https://picsum.photos/id/160/800/700', category: 'people', title: 'Designer', location: 'Studio' },
+    { src: 'https://picsum.photos/id/161/800/800', category: 'people', title: 'Developer', location: 'Office' },
+];
+        let currentIndex = 0;
+        let filteredImages = [...images];
+
+        // Initialize Gallery
+        function renderGallery() {
+            const gallery = document.getElementById('gallery');
+            gallery.innerHTML = '';
+            
+            filteredImages.forEach((img, index) => {
+                const item = document.createElement('div');
+                item.className = 'item';
+                item.style.animationDelay = `${index * 0.1}s`;
+                item.onclick = () => openLightbox(index);
+                
+                item.innerHTML = `
+                    <img src="${img.src}" alt="${img.title}" loading="lazy">
+                    <div class="overlay">
+                        <h3>${img.title}</h3>
+                        <span>${img.category.toUpperCase()}</span>
+                    </div>
+                `;
+                gallery.appendChild(item);
+            });
+        }
+
+        // // Filter Function
+        // function filter(category) {
+        //     document.querySelectorAll('.btn').forEach(btn => btn.classList.remove('active'));
+        //     event.target.classList.add('active');
+            
+        //     if (category === 'all') {
+        //         filteredImages = [...images];
+        //     } else {
+        //         filteredImages = images.filter(img => img.category === category);
+        //     }
+        //     searchImages();
+        // }
+function filter(category, element) {
+
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    element.classList.add('active');
+
+    if (category === 'all') {
+        filteredImages = [...images];
+    } else {
+        filteredImages = images.filter(img => img.category === category);
+    }
+
+    renderGallery();
+}
+        // Search Function
+        function searchImages() {
+            const query = document.getElementById('search').value.toLowerCase();
+            const activeCategory = document.querySelector('.btn.active').textContent.toLowerCase();
+            
+            filteredImages = images.filter(img => {
+                const matchesSearch = img.title.toLowerCase().includes(query) || 
+                                      img.location.toLowerCase().includes(query);
+                const matchesCategory = activeCategory === 'all' || img.category === activeCategory;
+                return matchesSearch && matchesCategory;
+            });
+            
+            renderGallery();
+        }
+
+        // Lightbox Functions
+        function openLightbox(index) {
+            currentIndex = index;
+            const img = filteredImages[index];
+            
+            document.getElementById('lightbox-img').src = img.src;
+            document.getElementById('lightbox-title').textContent = img.title;
+            
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        function changeImage(direction) {
+            currentIndex += direction;
+
+            if (currentIndex < 0) {
+                currentIndex = filteredImages.length - 1;
+            }
+
+            if (currentIndex >= filteredImages.length) {
+                currentIndex = 0;
+            }
+
+            openLightbox(currentIndex);
+        }
+
+        // Click outside image to close
+        document.getElementById('lightbox').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeLightbox();
+            }
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+
+            if (!document.getElementById('lightbox').classList.contains('active')) return;
+
+            if (e.key === 'Escape') closeLightbox();
+
+            if (e.key === 'ArrowLeft') changeImage(-1);
+
+            if (e.key === 'ArrowRight') changeImage(1);
+        });
+
+        // Initial Render
+        renderGallery();
+    </script>
+
+</body>
+</html>
