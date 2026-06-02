@@ -29,3 +29,4 @@ User authentication system
 📷 Project Type
 
 Frontend Web Development Project / Image Gallery Website
+
